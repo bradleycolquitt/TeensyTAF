@@ -34,7 +34,7 @@ bool circular_buf_full(circular_buf_t cbuf)
 }
 
 
-int circular_buf_put(circular_buf_t * cbuf, float * data)
+int circular_buf_put(circular_buf_t * cbuf, uint8_t data)
 {
     int r = -1;
 
@@ -55,7 +55,7 @@ int circular_buf_put(circular_buf_t * cbuf, float * data)
 }
 
 
-int circular_buf_get(circular_buf_t * cbuf, float * data)
+int circular_buf_get(circular_buf_t * cbuf, uint8_t * data)
 {
     int r = -1;
 
