@@ -36,7 +36,7 @@ class TeensyTAF:
 
         if not os.path.exists(self.outdir_serial):
             os.makedirs(self.outdir_serial)
-        self.serial_fn = '/'.join([self.outdir_serial,  self.inital_date.strftime("%y%m%d") + '.TAFlog'])
+        self.serial_fn = '/'.join([self.outdir_serial,  self.inital_date.strftime("%y%m%d_%H%M%S") + '.TAFlog'])
         print(self.serial_fn)
         self.serial_fp = open(self.serial_fn, 'a')
         
@@ -47,6 +47,24 @@ class TeensyTAF:
     
        
 def serial_recorder_loop(serial_con, serial_fp):
+    line_out = ''
+    event_num = 1
+    while True:
+        if (serial_con.inWaiting()>0):
+            line=serial_con.readline(serial_con.inWaiting()) #.strip('\r'));
+            line_out = ''.join([line_out, line.strip('\r\n')])
+
+            #if re.search('PSD', line):
+                
+            if re.search('\n', line):
+                line_out = ','.join([str(time.time()), str(event_num), line_out])
+                serial_fp.write(line_out + '\n');
+                serial_fp.flush()
+                print(line_out)
+                event_num += 1
+                line_out = ''
+
+def serial_recorder_loop_json(serial_con, serial_fp):
     line_out = ''
     while True:
         if (serial_con.inWaiting()>0):
