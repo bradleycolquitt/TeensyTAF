@@ -1,0 +1,14 @@
+// Thresholding Variables...
+#define amp_threshold 1500
+#define dpthresh 2
+#define amplitude_threshold_duration 1
+#define template_match_duration 1
+#define ff_discard 1000
+#define ff_min 3600
+#define ff_max 4300
+#define freqthresh 3686
+#define percenthits 0
+#define playwn true
+#define freqdir true
+#define ADAPTIVE true
+#define FF_QUANTILE 0.3
