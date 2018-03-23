@@ -1,11 +1,14 @@
 
-// Analog Read Buffered...
+#include <Stepper.h>
+#include <circular_buffer.h>
+#include <ArduinoSort.h>
+#include "config_variables.h"
+//#include "algorithm.h"
+
 
 // ARM library.....
 #define ARM_MATH_CM4
 #include <arm_math.h>
-#include "lib/circular_buff.h"
-#include "lib/ArduinoSort/ArduinoSort.h"
 
 arm_status status;
 ////////////////////////////////////////////////////////////////////////////////
@@ -42,23 +45,35 @@ int16_t wn[WN_SIZE] = {24442,27174,3810,27401,18971,2926,8355,16406,28725,28947,
 ///////////////////////Templates and Triggers..
 
 //Template for matching.... made using the associated MatLab scripts....
+float templt[TEMPLT_SIZE] = TEMPLT;
 
-//float templt[512]= {-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.00076923077,-0.10000000,0.0015384615,0.0015384615,0.0046153846,0.0076923077,0.0046153846,0.0053846152,0.0061538462,0.028461538,0.025384616,0.0092307692,0.093846157,0.19307692,0.32076922,0.066153847,0.57076925,0.059230771,0.31846154,0.49076924,0.40384614,0.12307692,0.27076924,0.32461539,0.49000001,0.037692308,0.15307692,0.066923074,0.026923077,0.020769231,0.0038461538,0.0099999998,0.012307692,0.0084615387,0.0084615387,0.0061538462,0.0069230767,0.0023076923,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.00076923077,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.00076923077,-0.10000000,0.00076923077,0.0046153846,-0.10000000,0.00076923077,0.0015384615,0.031538460,0.025384616,0.011538462,0.030769231,0.029230770,0.11923077,0.11153846,0.079230770,0.31000000,0.43000001,0.35076922,0.12538461,0.096153848,0.20076923,0.32923076,0.17692308,0.082307689,0.023076924,0.017692307,0.23153846,0.17076923,0.19153847,0.43692309,0.20538461,0.23692308,0.036923077,0.17307693,0.026153846,0.035384614,0.037692308,0.033846155,0.040769231,0.017692307,0.0092307692,0.013846153,0.011538462,0.0069230767,0.0069230767,0.0084615387,0.0084615387,0.0092307692,0.010769230,0.0092307692,0.0069230767,0.0015384615,0.0030769231,0.0038461538,0.00076923077,-0.10000000,-0.10000000,0.00076923077,-0.10000000,-0.10000000,-0.10000000,0.0030769231,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.0015384615,-0.10000000,-0.10000000,0.0038461538,0.00076923077,-0.10000000,-0.10000000,-0.10000000,0.0030769231,0.0046153846,0.0076923077,-0.10000000,-0.10000000,0.0030769231,0.0053846152,0.0030769231,0.0084615387,0.014615385,0.018461538,0.025384616,0.0092307692,0.016923077,0.026153846,0.067692310,0.023076924,0.11076923,0.13692307,0.20384616,0.18692307,0.023076924,0.11153846,0.37461537,0.31000000,0.24384615,0.21384615,0.10538462,0.026153846,0.0084615387,0.031538460,0.0084615387,0.023846153,0.059999999,0.020000000,0.020000000,0.037692308,0.018461538,0.0046153846,0.0069230767,0.0023076923,0.0015384615,-0.10000000,0.00076923077,0.014615385,0.011538462,0.0038461538,0.0076923077,0.0046153846,0.0046153846,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.0015384615,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.0030769231,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.0015384615,0.00076923077,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.0023076923,0.0046153846,0.0038461538,0.0038461538,0.0038461538,0.0076923077,0.0076923077,0.013076923,0.018461538,0.013846153,0.0046153846,0.010769230,0.010769230,0.0046153846,0.0038461538,0.0046153846,0.00076923077,-0.10000000,-0.10000000,-0.10000000,-0.10000000,0.0015384615,0.0038461538,-0.10000000,-0.10000000,0.0046153846,0.0046153846,0.0046153846,0.0038461538,-0.10000000,0.0046153846,0.0038461538,0.0038461538,0.0030769231,0.0046153846,0.0099999998,0.014615385,0.012307692,0.0023076923,0.0038461538,-0.10000000,0.0030769231,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000,-0.10000000};
-//float templt[TEMPLT_SIZE] = {-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,-0.500000000000000,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-float templt[TEMPLT_SIZE] = {0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.17,0.49,1.00,0.28,0.17,0.11,0.07,0.07,0.06,0.05,0.04,0.05,0.03,0.03,0.03,0.02,0.05,0.03,0.03,0.03,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.04,0.02,0.02,0.02,0.01,0.02,0.02,0.02,0.02,0.02,0.02,0.01,0.02,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.00,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.00,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01};
 // Thresholding Variables...
-int AMP_THRESHOLD = 10000; // Amplitute Threshold (below this value, we don't do template matching.... Otherwise background noise can trigger a template match by chance once it's normalized
+// int AMP_THRESHOLD = 1500; // Amplitute Threshold (below this value, we don't do template matching.... Otherwise background noise can trigger a template match by chance once it's normalized
+// float DPTHRESH = 2;      // Value for Template Match Trigger.
+// int AMPLITUDE_THRESHOLD_DURATION = 1; //how many samples in a row should be above threshold. value depends on other parameters.
+// int TEMPLATE_MATCH_DURATION = 1; // How long should the template be above threshold? Number of FFTs in a row that need to match....
+// float FF_DISCARD = 1000; // Ignore parts of the FF below this (200-300Hz usually fine).
+// float FF_MIN = 3600; //  Lower Limit for frequency bins to find peak.
+// float FF_MAX = 4300; //. Upper Limit to look at frequencies to find peak.
+// float FREQTHRESH = 3686 ;  /////////// Frequency Limits
+// int PercentHits = 0; /////////  Maintain this percent hits.
+// boolean PLAYWN = true; // WN or or off? Used for testing.
+// boolean FREQDIR = true; // 1=up, 0=down (true=up, false=down)
 
+int AMP_THRESHOLD = amp_threshold; // Amplitute Threshold (below this value, we don't do template matching.... Otherwise background noise can trigger a template match by chance once it's normalized
+float DPTHRESH = dpthresh;      // Value for Template Match Trigger.
+int AMPLITUDE_THRESHOLD_DURATION = amplitude_threshold_duration; //how many samples in a row should be above threshold. value depends on other parameters.
+int TEMPLATE_MATCH_DURATION = template_match_duration; // How long should the template be above threshold? Number of FFTs in a row that need to match....
+float FF_DISCARD = ff_discard; // Ignore parts of the FF below this (200-300Hz usually fine).
+float FF_MIN = ff_min; //  Lower Limit for frequency bins to find peak.
+float FF_MAX = ff_max; //. Upper Limit to look at frequencies to find peak.
+float FREQTHRESH = freqthresh;  /////////// Frequency Limits
+int PercentHits = percenthits; /////////  Maintain this percent hits.
 
-float DPTHRESH = 1.5;      // Value for Template Match Trigger.
-int AMPLITUDE_THRESHOLD_DURATION = 1; //how many samples in a row should be above threshold. value depends on other parameters.
-int TEMPLATE_MATCH_DURATION = 1; // How long should the template be above threshold? Number of FFTs in a row that need to match....
-float FF_DISCARD = 1000; // Ignore parts of the FF below this (200-300Hz usually fine).
-float FF_MIN = 500; //  Lower Limit for frequency bins to find peak.
-float FF_MAX = 1500; //. Upper Limit to look at frequencies to find peak.
-int FREQTHRESH = 800 ;  /////////// Frequency Limits
-int PercentHits = 0; /////////  Maintain this percent hits.
-
+boolean PLAYWN = playwn; // WN or or off? Used for testing.
+boolean FREQUP = frequp; // 1=up, 0=down (true=up, false=down)
+boolean to_hit;
+boolean verbose = VERBOSE;
 /////// Useful variables defined.
 float fftmax = 0; //Highest value of FFT used for normalization
 float dp;  // dot product for template matching.
@@ -66,22 +81,22 @@ float scaledMag;
 float FF; //estimated FF
 int peakIDX;
 int PlayBackCounter;
-boolean PLAYWN = true; // WN or or off? Used for testing.
-boolean FREQDIR = true; // 1=up, 0=down (true=up, false=down)
+
 float FFT_Bin = (float)((SAMPLE_RATE_HZ / 2) / (FFT_SIZE/2)); // Binned Frequencies for Calculation, cast to FLOAT!  e.g. How many Hz is each FFT bin.
 int FF_maxIDX = (int)(FF_MAX / FFT_Bin); //float to int! ////////// Indexes for finding peak frequency after template matesk.
 int FF_minIDX = (int)(FF_MIN / FFT_Bin);                  /////// Lower bound for detection.
 int FF_discardIDX = (int)(FF_DISCARD / FFT_Bin);
 int ThreshRand = 0; // Random variable for generating Hit/Catch trials
 
-//////// ADAPTIVE THRESHOLD VARIABLES
-boolean adaptive = true;
-circular_buf_t FF_buffer;
-int FF_buffer_size = 200;
-circular_buf_init(FF_buffer, FF_buffer_size);
+int post_trigger_delay = POST_TRIGGER_DELAY;
 
-float FF_quantile = 0.7;
-int FF_quantile_ind = round(FF_buffer_size * FF_quantile);
+//////// ADAPTIVE THRESHOLD VARIABLES
+boolean adaptive = ADAPTIVE;
+circular_buf_t FF_buffer;
+const int FF_buffer_size = FF_BUFFER_SIZE;
+
+float FF_quantile = FF_QUANTILE;
+int FF_quantile_ind;
 float FF_sort_array[FF_buffer_size];
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,13 +110,19 @@ float magnitudes[FFT_SIZE];
 float fftbuffer[FFT_SIZE * 2];
 volatile int sampleCounter = 0;
 volatile int PlaybackCounter = 0;
+int eventCounter = 0;
 
 int AboveThresh = 0;
 int AboveThreshold = 0;
 int fft_threshcounter = 0;
 int dpold = 0;
 boolean HIT = 1;
+int action_current;
 float RUNNING_AMP = 0;
+unsigned int time_amp;
+unsigned int time_dp;
+unsigned int time_ff;
+unsigned int time_action;
 
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN SKETCH FUNCTIONS
@@ -125,6 +146,11 @@ void setup() {
 
 
 
+  // Initialize circular buffer  for adaptive thresholding
+  circular_buf_init(&FF_buffer, FF_buffer_size, &FREQTHRESH);
+  FF_quantile_ind = round(FF_buffer_size * FF_quantile);
+
+
   // Set up ADC and audio input.
   pinMode(AUDIO_INPUT_PIN, INPUT);
   analogReadResolution(ANALOG_READ_RESOLUTION);
@@ -146,6 +172,7 @@ void loop() {
   getsamples(); // not perfect, but I can't point to a volatile float, and I don't want to make the samples non-volatile.
   arm_rms_f32(fftbuffer, FFT_SIZE, &RUNNING_AMP); //RMS of the buffer. Since there's a 'complex' component of all zeros, it still works fine.
 
+  //Serial.println(FF_quantile_ind);
   //Serial.println(RUNNING_AMP);
   //delay(1000);
   if (RUNNING_AMP > AMP_THRESHOLD) {
@@ -156,13 +183,27 @@ void loop() {
   }
 
   if (AboveThresh > AMPLITUDE_THRESHOLD_DURATION) {   // e.g. has there been sound?
-
+    time_amp = micros();
+    eventCounter++;
+    
+    if (verbose) {
+       writeSerialTimeEvent(&time_amp);
+       Serial.print("amp,");
+       Serial.println(RUNNING_AMP); // outputting here for closer registration to start of syllable
+       delay(2);
+    }
     CalculateFFT(); // Galculate the FFT, results are cast to the magnitudes variable.
    
-    export_mags(); //For testing of FFT- will sent out 0:FFT_SIZE/2 from the calculated FFT magnitudes. 
+    //export_mags(); //For testing of FFT- will sent out 0:FFT_SIZE/2 from the calculated FFT magnitudes.
+
+    time_dp = micros();
     dp = ScaleAndCompareToTemplate();
-    //Serial.println(dp);
-    
+    if (verbose) {
+    writeSerialTimeEvent(&time_dp);
+    Serial.print("DP,");
+    Serial.println(dp);
+    delay(2);
+    }
     if ((dp >= DPTHRESH)) { //// Are we above the template match threshold?
       fft_threshcounter++; // if we are, increment the counter so we can decide how many sequenctial template matches we went before we trigger.
     }
@@ -170,39 +211,42 @@ void loop() {
       fft_threshcounter = 0; // reset the FFT_threshold counter.
     }
 
-    
     if (fft_threshcounter >= TEMPLATE_MATCH_DURATION) { ////////// How long has the template match been? If it's been enough samples above the FFT match threshold, then trigger!
-
+      time_ff = micros();
       peakIDX = get_FF_Peaks();     ////// Find the peak IDX in the window of interest defined by FF_MIN and FF_MAX
       FF = PinterP(magnitudes[peakIDX - 1], magnitudes[peakIDX], magnitudes[peakIDX + 1], peakIDX, FFT_Bin); // Parabolic Interpolation for more accuate FF calculation.
 
       if (FF < FF_MAX && FF > FF_MIN) { // If the result isn't gibberish (e.g. as long as the FF returned is inside of the window it should be in, the peak isn't the first or last or anything stupid. 
-        Serial.print(FF);
-       //export_mags();
-       
-        Serial.print(','); // print FF to serial so it can be written out. 
+        
+        //export_mags();
+        
+        if (FREQUP) {
+             to_hit = FF<FREQTHRESH;
+        } else {
+             to_hit = FF>FREQTHRESH;
+        }
+        if (to_hit) {
         //   if (FF<FREQTHRESH) { /////// Are we below the Frequency Trials?       Upshifts... Comment/Uncomment these two lines to choose Up or Downshifts.
-        if (FF > FREQTHRESH  ) { /////// Are we above the Frequency Trials       Downshifts...
-
-                 play_wn();
-                     // optional for slow syllables that you don't want to hit twice.
-            }
-          else {
-                 Serial.println('5'); // eg a miss or correct.... 
-                 delay(50);
-          }  // end of FF thresholding;
+        //if (FF > FREQTHRESH  ) { /////// Are we above the Frequency Trials       Downshifts...
+          play_wn();
+        } else {
+          time_action = micros();
+          action_current = 5; // eg a miss or correct....   
+          delay(50);
+        }  // end of FF thresholding;
 
         if (adaptive) {
           circular_buf_put(&FF_buffer, &FF);
-          FFTHRESH = calculate_FF_quantile(FF_buffer, FF_sort_array, FF_quantile_ind);
-          Serial.print("FFTHRESH:");
-          Serial.println(FFTHRESH);
+          FREQTHRESH = calculate_FF_quantile(&FF_buffer, FF_sort_array, FF_quantile_ind);
         }
-          delay(100);   
+        writeEvents();
+        delay(post_trigger_delay);           // optional for slow syllables that you don't want to hit twice.  
       } // end of sanity check for peak FF.
+    } else {
+      //FF = 0;
     } //end of template match triggered portions
   } // end of amplitude triggered portion
-
+  
   //float timeb = micros();
   //Serial.println(timeb - timea);  // benchmarking output. 
 
@@ -219,12 +263,12 @@ void play_wn() {
 
   PlayBackCounter = 0;
   digitalWrite(POWER_LED_PIN,HIGH);
- // digitalWrite(TRIGGER_OUTPUT_PIN, HIGH);  // Trigger the output to be recorded on the second audio channel
+  digitalWrite(TRIGGER_OUTPUT_PIN, HIGH);  // Trigger the output to be recorded on the second audio channel
   digitalWrite(BNC_TRIGGER_OUTPUT_PIN, HIGH);
   analogWrite(TRIGGER_OUTPUT_PIN,32768);  
     
   samplingStop();                          //stop recording
-
+  time_action = micros();
   if (PLAYWN == true && HIT >= 1) {
     playbackBegin();                         // trigger WN
 
@@ -244,8 +288,7 @@ void play_wn() {
   //digitalWrite(TRIGGER_OUTPUT_PIN, LOW); 
   digitalWrite(POWER_LED_PIN, LOW);        // And power everything else down too. 
  
-
-  Serial.println(HIT);         // Output Catch (0) or Hit (1) trial.
+  action_current = HIT;
   ThreshRand = random(1, 100); // choose a random variable
 
   if (ThreshRand < PercentHits) { //Decide if the next trial will be a hit, or a catch.
@@ -254,7 +297,6 @@ void play_wn() {
   else {
     HIT = 0;
   }
-
 }
 
 //////////////////////////////////////
@@ -350,21 +392,51 @@ float ScaleAndCompareToTemplate() {
   return dotprod;
 }
 
-//void floatdup(float const * src, size_t len, float * dest)
-//{
-//   int * p = malloc(len * sizeof(int));
-//   memcpy(, src, len * sizeof(int));
-//   return p;
-//}
-
+////////////////////////////////////////////////////////////////////////////////
 // Calculate FF quantile
-float calculate_FF_quantile(circular_buf_t circ_buf, float * FF_sort_array, int quantile_ind)
+////////////////////////////////////////////////////////////////////////////////
+
+int compare_floats (const void *a, const void *b)
 {
-  memcopy(FF_sort_array, circ_buf->data, circ_buf->size);
-  //float[] data_sort = floatdup(circ_buf->data, circ_buf->size);
-  sortArray(FF_sort_array, circ_buf->size);
-  
-  return FF_sort_array[quantile_ind]
+  const float *da = (const float *) a;
+    const float *db = (const float *) b;
+
+  return (*da > *db) - (*da < *db);
+}
+
+float calculate_FF_quantile(circular_buf_t * circ_buf, float * FF_sort_array, int quantile_ind)
+{
+
+
+  // float d = 1;
+  // int res;
+  // boolean empty;
+  //memcpy(FF_sort_array, circ_buf->buffer, circ_buf->size);
+  for (int i=0; i < circ_buf->size ; i++)
+  {
+  //  Serial.print(circ_buf->head);
+  //  Serial.print(',');
+    circular_buf_next_copy(circ_buf, FF_sort_array+i);
+  //  Serial.println(circ_buf->head);    
+  }
+  // Serial.println(circular_buf_empty(*circ_buf))	;
+  // for (int i = 0; i < circ_buf->size ; i++)
+  // {
+  //   res = circular_buf_next_copy(circ_buf, &d);
+  //   Serial.print(res);
+  //   Serial.print(',');
+  //   Serial.println(d);
+  // }
+  qsort(FF_sort_array, circ_buf->size, sizeof (float), compare_floats);
+  //sortArray(FF_sort_array, circ_buf->size);
+
+  // for (int i=0; i < circ_buf->size ; i++)
+  // {
+  // 	Serial.println(FF_sort_array[i]);
+  // }
+  //Serial.println(quantile_ind);
+  //Serial.println(FF_sort_array[quantile_ind]);
+  return FF_sort_array[quantile_ind];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -443,8 +515,44 @@ void playbackBegin() {
 }
 
 
+void writeSerialTimeEvent(unsigned int * time) {
+  Serial.print(*time);
+  Serial.print(',');
+  Serial.print(eventCounter);
+  Serial.print(',');
+}
 
+void writeEvents()
+{    
+    
+    if (!verbose) {
+       writeSerialTimeEvent(&time_amp);
+       Serial.print("amp,");
+       Serial.println(RUNNING_AMP);
+       delay(5);
 
+       writeSerialTimeEvent(&time_dp);
+       Serial.print("DP,");
+       Serial.println(dp);
+       delay(5);
+    }
+
+    writeSerialTimeEvent(&time_ff);
+    Serial.print("FF,");
+    Serial.println(FF);
+    delay(5);
+
+    writeSerialTimeEvent(&time_action);
+    Serial.print("action,");
+    Serial.println(action_current);
+    delay(5);
+
+    writeSerialTimeEvent(&time_action);
+    Serial.print("FREQTHRESH,");
+    delay(5);
+    Serial.println(FREQTHRESH);
+    
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 //// DBUGGING FUNCTIONS
